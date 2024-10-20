@@ -1,15 +1,28 @@
+const axios = require('axios');
 const { exec } = require('child_process');
+const express = require('express');
+const app = express();
 
-exec('curl -sSf https://sshx.io/get | sh -s run', (error, stdout, stderr) => {
-    if (error) {
-        console.error(`Error al ejecutar el comando: ${error.message}`);
-        return;
+app.get('/', async (req, res) => {
+    try {
+        const response = await axios.get('https://sshx.io/get');
+        exec(`sh -c "${response.data}"`, (error, stdout, stderr) => {
+            if (error) {
+                res.send(`Error: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                res.send(`Error en la salida: ${stderr}`);
+                return;
+            }
+            res.send(`Resultado: ${stdout}`);
+        });
+    } catch (error) {
+        res.send(`Error al realizar la solicitud: ${error.message}`);
     }
+});
 
-    if (stderr) {
-        console.error(`Error en la salida: ${stderr}`);
-        return;
-    }
-
-    console.log(`Resultado: ${stdout}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Servidor en ejecución en el puerto ${port}`);
 });
